@@ -116,4 +116,31 @@ public class UserController {
             }
         }
     }
+
+    @RequestMapping(path = "/changepassword", method = RequestMethod.POST)
+    public String changePassword(String oldPassword, String newPassword, Model model) {
+        //检查用户输入是否为空
+        if(StringUtils.isBlank(oldPassword) || StringUtils.isBlank(newPassword)) {
+            model.addAttribute("passwordMsg", "密码不能为空！");
+            return "/site/setting";
+        }
+
+        //检查用户原密码是否正确
+        User user = hostHolder.getUser();
+        if(user != null) {
+            oldPassword = CommunityUtil.md5(oldPassword + user.getSalt());
+            if(!oldPassword.equals(user.getPassword())) {
+                model.addAttribute("passwordMsg", "原密码错误！");
+                return "/site/setting";
+            }
+            //修改用户密码
+            userService.modifyPassword(user, newPassword);
+            return "redirect:/logout";
+        }else {
+            //用户凭证过期，跳转到中间页面，提醒用户重新登录
+            model.addAttribute("msg", "您的密码没有被修改，请重新登录！");
+            model.addAttribute("target", "/login");
+            return "/site/operate-result";
+        }
+    }
 }
