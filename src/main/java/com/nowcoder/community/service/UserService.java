@@ -209,4 +209,8 @@ public class UserService implements CommunityConstant {
         userMapper.updatePassword(user.getId(), newPassword);
     }
 
+    public User findUserByName(String username) {
+        return userMapper.selectByName(username);
+    }
+
 }
