@@ -1,10 +1,11 @@
 package com.nowcoder.community.controller;
 
 import com.nowcoder.community.annotation.LoginRequired;
+import com.nowcoder.community.entity.Comment;
+import com.nowcoder.community.entity.DiscussPost;
+import com.nowcoder.community.entity.Page;
 import com.nowcoder.community.entity.User;
-import com.nowcoder.community.service.FollowService;
-import com.nowcoder.community.service.LikeService;
-import com.nowcoder.community.service.UserService;
+import com.nowcoder.community.service.*;
 import com.nowcoder.community.util.CommunityConstant;
 import com.nowcoder.community.util.CommunityUtil;
 import com.nowcoder.community.util.HostHolder;
@@ -25,6 +26,10 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/user")
@@ -48,6 +53,12 @@ public class UserController implements CommunityConstant {
 
     @Autowired
     private FollowService followService;
+
+    @Autowired
+    private DiscussPostService discussPostService;
+
+    @Autowired
+    private CommentService commentService;
 
     @Autowired
     private HostHolder hostHolder;
@@ -185,5 +196,79 @@ public class UserController implements CommunityConstant {
         model.addAttribute("hasFollowed", hasFollowed);
 
         return "/site/profile";
+    }
+
+    /* 用户曾经发布过的帖子 */
+    @RequestMapping(path = "/userpost/{userId}", method = RequestMethod.GET)
+    public String getDiscussPostOfUser(@PathVariable("userId") int userId, Page page, Model model) {
+        //查询用户
+        User user = userService.findUserById(userId);
+        if(user == null) {
+            throw new RuntimeException("该用户不存在！");
+        }
+        model.addAttribute("user", user);
+
+        //查询用户发布过的帖子数量
+        int postNumber = discussPostService.findDiscussPostRows(userId);
+        model.addAttribute("postNumber", postNumber);
+
+        //设置分页信息
+        page.setLimit(5);
+        page.setPath("/user/userpost/" + userId);
+        page.setRows(postNumber);
+
+        //查询用户发布过的帖子
+        List<Map<String, Object>> discussPostVoList = new ArrayList<>();
+        List<DiscussPost> discussPosts = discussPostService.findDiscussPosts(userId, page.getOffset(), page.getLimit());
+        if(discussPosts != null) {
+            for(DiscussPost post : discussPosts) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("post", post);
+                //查询帖子的点赞数
+                map.put("likeCount", likeService.findEntityLikeCount(ENTITY_TYPE_POST, post.getId()));
+
+                discussPostVoList.add(map);
+            }
+        }
+        model.addAttribute("posts", discussPostVoList);
+
+        return "/site/my-post";
+    }
+
+    /* 用户曾经发布过的对帖子的评论 */
+    @RequestMapping(path = "/userreply/{userId}", method = RequestMethod.GET)
+    public String getUserCommentToDiscussPost(@PathVariable("userId") int userId, Page page, Model model) {
+        //查询用户
+        User user = userService.findUserById(userId);
+        if(user == null) {
+            throw new RuntimeException("该用户不存在！");
+        }
+        model.addAttribute("user", user);
+
+        //查询用户发布过的评论数量（针对帖子）
+        int commentNumber = commentService.findCommentCountByUserId(userId, ENTITY_TYPE_POST);
+        model.addAttribute("commentNumber", commentNumber);
+
+        //设置分页信息
+        page.setLimit(5);
+        page.setPath("/user/userreply/" + userId);
+        page.setRows(commentNumber);
+
+        //查询用户发布过的对帖子的评论
+        List<Map<String, Object>> commentVoList = new ArrayList<>();
+        List<Comment> commentToDiscussPostList = commentService.findCommentByUserId(userId, ENTITY_TYPE_POST, page.getOffset(), page.getLimit());
+        if(commentToDiscussPostList != null) {
+            for(Comment comment : commentToDiscussPostList) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("comment", comment);
+                //查询评论的帖子
+                map.put("post", discussPostService.findDiscussPostById(comment.getEntityId()));
+
+                commentVoList.add(map);
+            }
+        }
+        model.addAttribute("comments", commentVoList);
+
+        return "/site/my-reply";
     }
 }

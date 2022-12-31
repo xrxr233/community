@@ -13,4 +13,10 @@ public interface CommentMapper {
 
     /* 增加评论 */
     int insertComment(Comment comment);
+
+    /* 查询某个用户发表过的评论 */
+    List<Comment> selectCommentByUserId(int userId, int entityType, int offset, int limit);
+
+    /* 查询某个用户发表过的评论数量 */
+    int selectCommentCountByUserId(int userId, int entityType);
 }
