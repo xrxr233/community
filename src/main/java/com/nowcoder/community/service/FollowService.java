@@ -67,7 +67,7 @@ public class FollowService {
 
     /* 查询用户是否关注了该实体 */
     public boolean hasFollowed(int userId, int entityType, int entityId) {
-        String followeeKey = RedisKeyUtil.getFolloweeKey(entityType, entityId);
+        String followeeKey = RedisKeyUtil.getFolloweeKey(userId, entityType);
         return redisTemplate.opsForZSet().score(followeeKey, entityId) != null;
     }
 }
