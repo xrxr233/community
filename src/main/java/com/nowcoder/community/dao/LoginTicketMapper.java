@@ -4,6 +4,7 @@ import com.nowcoder.community.entity.LoginTicket;
 import org.apache.ibatis.annotations.*;
 
 @Mapper
+@Deprecated  //不推荐使用，已使用Redis重构
 public interface LoginTicketMapper {
     @Insert({
             "insert into login_ticket(user_id, ticket, status, expired) ",
