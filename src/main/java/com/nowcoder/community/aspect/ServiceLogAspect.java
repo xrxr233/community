@@ -34,6 +34,11 @@ public class ServiceLogAspect {
 
         //获得request对象
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if(attributes == null) {
+            //比如在EventConsumer中直接调用service层方法，而不是通过Controller层调用，此时没有ServletRequestAttributes对象
+            //在这种情况下简单处理，不记录日志直接返回
+            return;
+        }
         HttpServletRequest request = attributes.getRequest();
 
         //用户ip地址

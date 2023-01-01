@@ -19,4 +19,6 @@ public interface CommentMapper {
 
     /* 查询某个用户发表过的评论数量 */
     int selectCommentCountByUserId(int userId, int entityType);
+
+    Comment selectCommentById(int id);
 }
