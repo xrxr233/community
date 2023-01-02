@@ -1,14 +1,9 @@
 package com.nowcoder.community.controller;
 
 import com.nowcoder.community.annotation.LoginRequired;
-import com.nowcoder.community.entity.Comment;
-import com.nowcoder.community.entity.DiscussPost;
-import com.nowcoder.community.entity.Page;
-import com.nowcoder.community.entity.User;
-import com.nowcoder.community.service.CommentService;
-import com.nowcoder.community.service.DiscussPostService;
-import com.nowcoder.community.service.LikeService;
-import com.nowcoder.community.service.UserService;
+import com.nowcoder.community.entity.*;
+import com.nowcoder.community.event.EventProducer;
+import com.nowcoder.community.service.*;
 import com.nowcoder.community.util.CommunityConstant;
 import com.nowcoder.community.util.CommunityUtil;
 import com.nowcoder.community.util.HostHolder;
@@ -40,6 +35,12 @@ public class DiscussPostController implements CommunityConstant {
     @Autowired
     private HostHolder hostHolder;
 
+    @Autowired
+    private EventProducer eventProducer;
+
+    @Autowired
+    private ElasticsearchService elasticsearchService;
+
     @RequestMapping(path = "/add", method = RequestMethod.POST)
     @ResponseBody
     @LoginRequired
@@ -55,6 +56,14 @@ public class DiscussPostController implements CommunityConstant {
         discussPost.setContent(content);
         discussPost.setCreateTime(new Date());
         discussPostService.addDiscussPost(discussPost);
+
+        //触发发帖事件（将帖子存入elasticsearch）
+        Event event = new Event()
+                .setTopic(TOPIC_PUBLISH)
+                .setUserId(user.getId())
+                .setEntityType(ENTITY_TYPE_POST)
+                .setEntityId(discussPost.getId());
+        eventProducer.fireEvent(event);
 
         //返回JSON字符串（报错的情况将来统一处理）
         return CommunityUtil.getJSONString(0, "发布成功！");
