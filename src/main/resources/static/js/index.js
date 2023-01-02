@@ -6,6 +6,13 @@ function publish() {
 	//隐藏发布帖子的弹出框
 	$("#publishModal").modal("hide");
 
+	//发送AJAX前，将csrf令牌设置到请求的消息头中
+	// var token = $("meta[name='_csrf']").attr("content");
+	// var header = $("meta[name='_csrf_header']").attr("content");
+	// $(document).ajaxSend(function (e, xhr, options) {
+	// 	xhr.setRequestHeader(header, token);
+	// });
+
 	//获取帖子标题和内容
 	var title = $("#recipient-name").val();
 	var content = $("#message-text").val();

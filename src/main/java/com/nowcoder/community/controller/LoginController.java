@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -172,6 +173,8 @@ public class LoginController implements CommunityConstant {
     @RequestMapping(path = "/logout", method = RequestMethod.GET)
     public String logout(@CookieValue("ticket") String ticket) {
         userService.logout(ticket);
+        //清理用户权限
+        SecurityContextHolder.clearContext();
         return "redirect:/login";  //重定向默认是GET请求
     }
 
@@ -215,7 +218,7 @@ public class LoginController implements CommunityConstant {
         Map<String, Object> map = userService.modifyPassword(email, newPassword);
         if(map == null || map.isEmpty()) {
             //成功
-            return "redirect:/login";
+            return "redirect:/logout";
         }else {
             //失败
             model.addAttribute("emailMsg", map.get("emailMsg"));
