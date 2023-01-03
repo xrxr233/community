@@ -27,4 +27,20 @@ public interface DiscussPostMapper {
 
     /* 更新帖子评论数量 */
     int updateCommentCount(int id, int commentCount);
+
+    /*
+    * 修改类型
+    * 0：普通
+    * 1：置顶
+    * */
+    int updateType(int id, int type);
+
+    /*
+    * 修改状态
+    * 0：正常
+    * 1：精华
+    * 2：删除
+    * */
+    int updateStatus(int id, int status);
+
 }
