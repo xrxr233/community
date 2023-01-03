@@ -51,7 +51,7 @@ public class ElasticsearchTests {
     @Test
     public void testInsertList(){
         for(int userId = 101; userId < 155; userId++) {
-            List<DiscussPost> list = discussPostMapper.selectDiscussPosts(userId, 0, 100);
+            List<DiscussPost> list = discussPostMapper.selectDiscussPosts(userId, 0, 100, 0);
             if(list != null && !list.isEmpty()) {
                 discussPostRepository.saveAll(list);
             }

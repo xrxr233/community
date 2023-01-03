@@ -11,7 +11,7 @@ public interface DiscussPostMapper {
     /*
     * 从offset开始查询最多limit条帖子（userId为可选条件）
     * */
-    List<DiscussPost> selectDiscussPosts(int userId, int offset, int limit);
+    List<DiscussPost> selectDiscussPosts(int userId, int offset, int limit, int orderMode);
 
     /*
     * 查询帖子的个数
@@ -42,5 +42,8 @@ public interface DiscussPostMapper {
     * 2：删除
     * */
     int updateStatus(int id, int status);
+
+    /* 更新分数 */
+    int updateScore(int id, double score);
 
 }
