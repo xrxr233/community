@@ -40,6 +40,9 @@ public interface CommunityConstant {
     /* 事件主题：删帖 */
     String TOPIC_DELETE = "delete";
 
+    /* 事件主题：长图 */
+    String TOPIC_SHARE = "share";
+
     /* 系统用户id */
     int SYSTEM_USER_ID = 1;
 
