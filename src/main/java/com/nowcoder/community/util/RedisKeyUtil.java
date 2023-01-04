@@ -102,4 +102,14 @@ public class RedisKeyUtil {
         return PREFIX_POST + SPLIT + "score";
     }
 
+    /* 热门帖子 */
+    public static String getHotPostKey(int offset, int limit) {
+        return PREFIX_POST + SPLIT + "hot" + SPLIT + offset + SPLIT + limit;
+    }
+
+    /* 帖子行数 */
+    public static String getPostRowsKey() {
+        return PREFIX_POST + SPLIT + "rows";
+    }
+
 }
