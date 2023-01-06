@@ -146,6 +146,28 @@
 						</div>
 					</div>
 				</li>
+				<!--你关注的用户发布了帖子类通知-->
+				<li class="media pb-3 pt-3 mb-3 border-bottom position-relative" th:if="${followeePostNotice!=null}">
+					<span class="badge badge-danger" th:text="${followeePostNotice.unread!=0?followeePostNotice.unread:''}">3</span>
+					<img src="http://static.nowcoder.com/images/head/follow.png" class="mr-4 user-header" alt="通知图标">
+					<div class="media-body">
+						<h6 class="mt-0 mb-3">
+							<span>你关注的用户动态</span>
+							<span class="float-right text-muted font-size-12"
+								  th:text="${#dates.format(followeePostNotice.message.createTime,'yyyy-MM-dd HH:mm:ss')}">2019-04-28 14:13:25</span>
+						</h6>
+						<div>
+							<a th:href="@{/notice/detail/publish}">
+								你关注的用户
+								<i th:utext="${followeePostNotice.user.username}">nowcoder</i>
+								发布了题为“<i th:utext="${followeePostNotice.postTitle}">题目</i>”的帖子
+							</a>
+							<ul class="d-inline font-size-12 float-right">
+								<li class="d-inline ml-2"><span class="text-primary">共 <i th:text="${followeePostNotice.count}">3</i> 条会话</span></li>
+							</ul>
+						</div>
+					</div>
+				</li>
 			</ul>
 		</div>
 	</div>

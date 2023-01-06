@@ -15,6 +15,8 @@ public class RedisKeyUtil {
     private static final String PREFIX_UV = "uv";
     private static final String PREFIX_DAU = "dau";
     private static final String PREFIX_POST = "post";
+    private static final String PREFIX_USER_ACTIVITY = "user:activity";
+    private static final String PREFIX_USER_CREATE_TIME = "user:createtime";
 
     /* 获取某个实体（帖子、评论）的赞的key
     *  key: like:entity:entityType:entityId
@@ -87,12 +89,18 @@ public class RedisKeyUtil {
         return PREFIX_UV + SPLIT + startDate + SPLIT + endDate;
     }
 
-    /* 单日活跃用户 */
+    /* 单日活跃用户
+    *  key: dau:202315
+    *  value: 0010 1100...，其中第3位为1表示2023年1月5日这天id=3的用户登录过
+    *  */
     public static String getDAUKey(String date) {
         return PREFIX_DAU + SPLIT + date;
     }
 
-    /* 区间活跃用户 */
+    /* 区间活跃用户
+    *  key: dau:20230105:20230112
+    *  value: 0110 1101...，此值通过2023年1月5日到2023年1月12日的value进行OR操作得到，1的个数表示这几天内登录过的用户个数
+    *  */
     public static String getDAUKey(String startDate, String endDate) {
         return PREFIX_DAU + SPLIT + startDate + SPLIT + endDate;
     }
@@ -110,6 +118,31 @@ public class RedisKeyUtil {
     /* 帖子行数 */
     public static String getPostRowsKey() {
         return PREFIX_POST + SPLIT + "rows";
+    }
+
+    /* 用户创建时间
+    *  key: user:createtime:5
+    *  value: 20230101，表示id=5的用户是在2023年1月1日创建的
+    *  */
+    public static String getUserCreateTimeKey(int userId) {
+        return PREFIX_USER_CREATE_TIME + SPLIT + userId;
+    }
+
+    /* 指定日期范围的用户活跃度（用于在Redis中计算，是最新计算的）
+    *  key: user:activity:20230101:20230114
+    *  value: 0110 1101...，第1位的1表示id=1的用户在这段时间内是活跃的
+    *  */
+    public static String getUserActivityKey(String start, String end) {
+        return PREFIX_USER_ACTIVITY + SPLIT + start + SPLIT + end;
+    }
+
+    /*
+    *  当前的用户活跃度（用于从Redis中获取，不一定是最新的）
+    *  key: user:activity
+    *  value: 0110 1101...，第1位的1表示id=1的用户在这段时间内是活跃的
+    *  */
+    public static String getCurrentUserActivityKey() {
+        return PREFIX_USER_ACTIVITY;
     }
 
 }

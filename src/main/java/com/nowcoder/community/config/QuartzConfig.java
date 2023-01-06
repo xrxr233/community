@@ -2,6 +2,8 @@ package com.nowcoder.community.config;
 
 import com.nowcoder.community.quartz.AlphaJob;
 import com.nowcoder.community.quartz.PostScoreRefreshJob;
+import com.nowcoder.community.quartz.UserActivityRefreshJob;
+import com.nowcoder.community.util.CommunityConstant;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.springframework.context.annotation.Bean;
@@ -13,7 +15,7 @@ import org.springframework.scheduling.quartz.SimpleTriggerFactoryBean;
  * 定时任务配置：初始化到数据库（quartz_*表）。只会在第一次被调用
  * */
 @Configuration
-public class QuartzConfig {
+public class QuartzConfig implements CommunityConstant {
     /*
     * FactoryBean可简化bean的实例化过程：
     * 1、通过FactoryBean封装了bean的实例化过程
@@ -71,6 +73,31 @@ public class QuartzConfig {
         factoryBean.setGroup("communityTriggerGroup");
         factoryBean.setRepeatInterval(1000 * 60 * 5);  //5min执行一次
         factoryBean.setJobDataMap(new JobDataMap());  //使用JobDataMap存储任务状态
+
+        return factoryBean;
+    }
+
+    /* 统计用户活跃度（暂不启用） */
+    //@Bean
+    public JobDetailFactoryBean userActivityRefreshJobDetail() {
+        JobDetailFactoryBean factoryBean = new JobDetailFactoryBean();
+        factoryBean.setJobClass(UserActivityRefreshJob.class);
+        factoryBean.setName("userActivityRefreshJob");
+        factoryBean.setGroup("communityJobGroup");
+        factoryBean.setDurability(true);
+        factoryBean.setRequestsRecovery(true);
+
+        return factoryBean;
+    }
+
+    //@Bean
+    public SimpleTriggerFactoryBean userActivityRefreshTrigger(JobDetail userActivityRefreshJobDetail) {
+        SimpleTriggerFactoryBean factoryBean = new SimpleTriggerFactoryBean();
+        factoryBean.setJobDetail(userActivityRefreshJobDetail);
+        factoryBean.setName("userActivityRefreshTrigger");
+        factoryBean.setGroup("communityTriggerGroup");
+        factoryBean.setRepeatInterval(1000 * 60 * 60 * 24 * QUARTZ_USER_ACTIVITY_INTERVAL);
+        factoryBean.setJobDataMap(new JobDataMap());
 
         return factoryBean;
     }

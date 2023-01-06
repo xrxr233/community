@@ -4,9 +4,8 @@ import com.alibaba.fastjson.JSONObject;
 import com.nowcoder.community.entity.DiscussPost;
 import com.nowcoder.community.entity.Event;
 import com.nowcoder.community.entity.Message;
-import com.nowcoder.community.service.DiscussPostService;
-import com.nowcoder.community.service.ElasticsearchService;
-import com.nowcoder.community.service.MessageService;
+import com.nowcoder.community.entity.User;
+import com.nowcoder.community.service.*;
 import com.nowcoder.community.util.CommunityConstant;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
@@ -17,9 +16,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 事件消费者
@@ -36,6 +33,12 @@ public class EventConsumer implements CommunityConstant {
 
     @Autowired
     private ElasticsearchService elasticsearchService;
+
+    @Autowired
+    private FollowService followService;
+
+    @Autowired
+    private DataService dataService;
 
     @Value("${wk.image.command}")
     private String wkImageCommand;
@@ -100,6 +103,59 @@ public class EventConsumer implements CommunityConstant {
 
         //存入elasticsearch
         elasticsearchService.saveDiscussPost(discussPost);
+
+        //推送给该用户的粉丝
+        this.pushMessage(event, discussPost);
+    }
+
+    /* 服务器推送消息模式 */
+    private void pushMessage(Event event, DiscussPost discussPost) {
+        //查询用户的所有粉丝数
+        long followerCount = followService.findFollowerCount(CommunityConstant.ENTITY_TYPE_USER, event.getUserId());
+
+        //分批次查询所有粉丝，并推送消息
+        int offset = 0;
+        int limit = 2000;
+        long numOfPeopleReceivedMessage = 0;  //已经收到消息的用户数
+        while(numOfPeopleReceivedMessage <= followerCount) {
+            List<Map<String, Object>> followers = followService.findFollowers(event.getUserId(), offset, limit);
+            for(Map<String, Object> map : followers) {
+                User follower = (User) map.get("user");
+
+                //判断用户是否为活跃用户（暂不启用）
+//                if(!dataService.isActiveUser(follower.getId())) {
+//                    continue;
+//                }
+
+                //构造通知消息对象
+                Message message = new Message();
+                message.setFromId(SYSTEM_USER_ID);
+                message.setToId(follower.getId());
+                message.setConversationId(event.getTopic());
+                message.setStatus(0);
+                message.setCreateTime(new Date());
+
+                //message的Content（JSON字符串）
+                Map<String, Object> content = new HashMap<>();
+                content.put("userId", event.getUserId());
+                content.put("entityType", event.getEntityType());
+                content.put("entityId", event.getEntityId());
+                content.put("postId", discussPost.getId());
+                content.put("postTitle", discussPost.getTitle());
+                if(!event.getData().isEmpty()) {
+                    for(Map.Entry<String, Object> entry : event.getData().entrySet()) {
+                        content.put(entry.getKey(), entry.getValue());
+                    }
+                }
+                message.setContent(JSONObject.toJSONString(content));
+
+                //存入消息
+                messageService.addMessage(message);
+            }
+
+            offset += limit;
+            numOfPeopleReceivedMessage += limit;
+        }
     }
 
     /* 消费删帖事件 */

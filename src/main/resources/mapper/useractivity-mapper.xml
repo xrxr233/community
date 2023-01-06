@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nowcoder.community.dao.UserActivityMapper">
+
+    <sql id="selectFields">
+        id, from, to, bitmap, create_time
+    </sql>
+
+    <sql id="insertFields">
+        from, to, bitmap, create_time
+    </sql>
+
+    <insert id="insertUserActivityRecord" parameterType="UserActivity" keyProperty="id">
+        insert into user_activity (<include refid="insertFields"></include>)
+        values(#{from}, #{to}, #{bitmap}, #{createTime})
+    </insert>
+
+    <select id="selectLatestRecord" resultType="UserActivity">
+        select <include refid="selectFields"></include>
+        from user_activity
+        where id = (select max(id)
+                    from user_activity)
+    </select>
+
+</mapper>

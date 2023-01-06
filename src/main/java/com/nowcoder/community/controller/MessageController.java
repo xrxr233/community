@@ -265,6 +265,33 @@ public class MessageController implements CommunityConstant {
             model.addAttribute("followNotice", messageVo);
         }
 
+        //查询关注的用户发布帖子的通知
+        message = messageService.findLatestNotice(user.getId(), TOPIC_PUBLISH);
+        if(message != null) {
+            Map<String, Object> messageVo = new HashMap<>();
+
+            messageVo.put("message", message);
+
+            //处理包含已转义字符的JSON字符串
+            String content = HtmlUtils.htmlUnescape(message.getContent());  //反转义
+            HashMap<String, Object> data = JSONObject.parseObject(content, HashMap.class);
+
+            //保存data中的信息
+            messageVo.put("user", userService.findUserById((Integer) data.get("userId")));
+            messageVo.put("entityType", data.get("entityType"));
+            messageVo.put("entityId", data.get("entityId"));
+            messageVo.put("postId", data.get("postId"));
+            messageVo.put("postTitle", data.get("postTitle"));
+
+            int count = messageService.findNoticeCount(user.getId(), TOPIC_PUBLISH);
+            messageVo.put("count", count);
+
+            int unread = messageService.findNoticeUnreadCount(user.getId(), TOPIC_PUBLISH);
+            messageVo.put("unread", unread);
+
+            model.addAttribute("followeePostNotice", messageVo);
+        }
+
         //查询未读消息数量
         int letterUnreadCount = messageService.findLetterUnreadCount(user.getId(), null);
         model.addAttribute("letterUnreadCount", letterUnreadCount);
@@ -299,6 +326,7 @@ public class MessageController implements CommunityConstant {
                 map.put("entityType", data.get("entityType"));
                 map.put("entityId", data.get("entityId"));
                 map.put("postId", data.get("postId"));
+                map.put("postTitle", data.get("postTitle"));
 
                 //该通知的作者（系统用户名）
                 map.put("fromUser", userService.findUserById(notice.getFromId()));

@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -42,6 +43,8 @@ public class UserService implements CommunityConstant {
 
     @Value("${server.servlet.context-path}")
     private String contextPath;
+
+    private SimpleDateFormat df = new SimpleDateFormat("yyyyMMdd");
 
     public User findUserById(int id) {
 //        return userMapper.selectById(id);
@@ -98,6 +101,10 @@ public class UserService implements CommunityConstant {
         user.setHeaderUrl(String.format("http://images.nowcoder.com/head/%dt.png", new Random().nextInt(1000)));
         user.setCreateTime(new Date());
         userMapper.insertUser(user);
+
+        //向Redis中存入用户创建时间
+        String redisKey = RedisKeyUtil.getUserCreateTimeKey(user.getId());
+        redisTemplate.opsForValue().set(redisKey, df.format(user.getCreateTime()));
 
         //激活邮件
         Context context = new Context();
@@ -244,6 +251,16 @@ public class UserService implements CommunityConstant {
 
     public User findUserByName(String username) {
         return userMapper.selectByName(username);
+    }
+
+    /* 根据id从表中删除一条用户记录（仅供测试用） */
+    public int deleteUserById(int id) {
+        return userMapper.deleteUserById(id);
+    }
+
+    /* 查询表中所有用户id（系统用户id=1除外） */
+    public List<Integer> findUserIds() {
+        return userMapper.selectUserIds();
     }
 
     /*

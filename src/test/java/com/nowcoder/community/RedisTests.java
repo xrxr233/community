@@ -1,7 +1,16 @@
 package com.nowcoder.community;
 
+import com.nowcoder.community.entity.User;
+import com.nowcoder.community.service.UserService;
+import com.nowcoder.community.util.RedisKeyUtil;
 import org.aspectj.lang.annotation.Aspect;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataAccessException;
@@ -9,7 +18,11 @@ import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisStringCommands;
 import org.springframework.data.redis.core.*;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringRunner;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @SpringBootTest
@@ -17,6 +30,13 @@ import java.util.concurrent.TimeUnit;
 public class RedisTests {
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
+
+    @Autowired
+    private UserService userService;
+
+    private SimpleDateFormat df = new SimpleDateFormat("yyyyMMdd");
+
+    User userTest;
 
     @Test
     public void testStrings() {
@@ -233,5 +253,68 @@ public class RedisTests {
         System.out.println(redisTemplate.opsForValue().getBit(redisKey, 4));
         System.out.println(redisTemplate.opsForValue().getBit(redisKey, 5));
         System.out.println(redisTemplate.opsForValue().getBit(redisKey, 6));
+    }
+
+    @BeforeEach
+    public void before() {
+        //向数据库中添加一个测试用户
+        userTest = new User();
+        userTest.setUsername("userTest");
+        userTest.setPassword("userTest");
+        userTest.setEmail("userTest@163.com");
+        //此时Redis中已保存了该用户的创建时间（yyyyMMdd）
+        Map<String, Object> map = userService.register(userTest);
+        if(!map.isEmpty()) {
+            throw new RuntimeException("参数错误！");
+        }
+        userTest = userService.findUserByName("userTest");
+
+        System.out.println(userTest);
+    }
+
+    @AfterEach
+    public void after() {
+        //从数据库中删除测试用户
+        userService.deleteUserById(userTest.getId());
+    }
+
+    @Test
+    public void testGetUserCreateTimeFromRedis() {
+        String redisKey = RedisKeyUtil.getUserCreateTimeKey(userTest.getId());
+        String expected = df.format(userTest.getCreateTime());
+        String val = (String) redisTemplate.opsForValue().get(redisKey);
+        System.out.println(expected + "------" + val);
+        Assert.assertEquals(expected, val);
+    }
+
+    /* 从Redis中获得一个bitmap，它的key在之前从没有出现过 */
+    @Test
+    public void testGetEmptyValue() {
+        String redisKey = RedisKeyUtil.getDAUKey(df.format(new Date()));
+
+        System.out.println(redisTemplate.opsForValue().getBit(redisKey, 0));
+        System.out.println(redisTemplate.opsForValue().getBit(redisKey, 1));
+        System.out.println(redisTemplate.opsForValue().getBit(redisKey, 2));
+        System.out.println(redisTemplate.opsForValue().getBit(redisKey, 3));
+        System.out.println(redisTemplate.opsForValue().getBit(redisKey, 4));
+        System.out.println(redisTemplate.opsForValue().getBit(redisKey, 5));
+        System.out.println(redisTemplate.opsForValue().getBit(redisKey, 6));
+
+        Long size = redisTemplate.opsForValue().size(redisKey);  //0
+        System.out.println(size);
+    }
+
+    /* 设置bitmap的某一位，查看bitmap的长度 */
+    @Test
+    public void testGetEmptyValue2() {
+        String redisKey = RedisKeyUtil.getDAUKey(df.format(new Date()));
+
+        redisTemplate.opsForValue().setBit(redisKey, 100, true);
+
+        long size = redisTemplate.opsForValue().size(redisKey);
+
+        System.out.println(size);  //100/8向上取整为13byte
+
+        System.out.println(redisTemplate.opsForValue().getBit(redisKey, size * 8));
     }
 }

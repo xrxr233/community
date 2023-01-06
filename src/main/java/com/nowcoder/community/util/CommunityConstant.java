@@ -54,4 +54,7 @@ public interface CommunityConstant {
 
     /* 权限：版主 */
     String AUTHORITY_MODERATOR = "moderator";
+
+    /* 定时任务：更新用户活跃度（14天一次） */
+    int QUARTZ_USER_ACTIVITY_INTERVAL = 14;
 }
